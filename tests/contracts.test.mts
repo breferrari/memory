@@ -25,6 +25,12 @@ test("hook messages match the original shell output byte for byte", t => {
   assert.equal(f.run(`${root}/hooks/memory-loop-activator.sh`), messages.activator);
 });
 
+test("the activator is silent in an opted-out project", t => {
+  const f = fixture(t);
+  f.optOut();
+  assert.equal(f.run(`${root}/hooks/memory-loop-activator.sh`), "");
+});
+
 test("no two hook components share an event and destination", () => {
   const registrations = hooks.map(component => `${field(component, "hookEvent")} ${field(component, "destination")}`);
   assert.deepEqual(registrations, [...new Set(registrations)], "mcs keeps one registration per event and command");

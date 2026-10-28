@@ -44,7 +44,8 @@ export function fixture(t: TestContext) {
       assert.equal(result.stderr, "");
       return result.stdout;
     });
-  return { work, project, env, run, runAsync };
+  const optOut = () => writeFileSync(`${project}/.claude/.no-memory-loop`, "");
+  return { work, project, env, run, runAsync, optOut };
 }
 
 export function gateFixture(t: TestContext, mode = "enforce") {

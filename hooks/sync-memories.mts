@@ -1,13 +1,14 @@
 #!/usr/bin/env -S node --experimental-strip-types --disable-warning=ExperimentalWarning
 import { spawnSync } from "node:child_process";
 import { closeSync, mkdirSync, openSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { attempt, commandExists, isDirectory, projectRoot, read } from "./shared.mts";
+import { attempt, commandExists, isDirectory, optedOut, projectRoot, read } from "./shared.mts";
 
 const embedModel = "hf:Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-Q8_0.gguf";
 
 function syncMemories(): void {
   attempt(() => read(0));
   const root = projectRoot();
+  if (optedOut(root)) return;
   const memories = `${root}/.claude/memories`;
   const directory = `${root}/.claude/.kb-index`;
   const config = `${directory}/memory-loop.yml`;

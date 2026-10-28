@@ -108,6 +108,31 @@ test("discovery agents receive the same briefing and marker as the template", t 
   assert.equal(f.event("SubagentStart", { agent_type: "Explore" }), "");
 });
 
+test("an opted-out project is never gated, briefed or logged", t => {
+  const f = gateFixture(t);
+  f.optOut();
+  f.turn();
+  assert.equal(f.spawn(), "");
+  assert.equal(f.event("SubagentStart", { agent_type: "Explore" }), "");
+  assert.equal(f.write(), "");
+  f.memories("learning_x.md");
+  f.retrieve(["learning_x.md"]);
+  assert.equal(existsSync(f.usagePath), false);
+  assert.equal(existsSync(f.state), false);
+  assert.equal(existsSync(f.log), false);
+});
+
+test("agents can neither set nor clear the opt-out marker", t => {
+  const f = gateFixture(t);
+  const marker = `${f.project}/.claude/.no-memory-loop`;
+  denied(f.write({ file_path: marker }));
+  denied(f.bash(`touch ${marker}`));
+  f.optOut();
+  denied(f.bash(`rm ${marker}`));
+  denied(f.write({ file_path: marker, agent_id: "agent" }));
+  assert.equal(f.bash("ls"), "");
+});
+
 test("malformed payloads fail open without output or state", t => {
   const f = gateFixture(t);
   for (const payload of ["", "{", "null", "42", "[]", { tool_input: { prompt: 4 } }, { hook_event_name: "unknown" }]) {

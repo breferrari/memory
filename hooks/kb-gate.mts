@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import { attempt, isDirectory, projectRoot, read } from "./shared.mts";
+import { attempt, isDirectory, OPT_OUT_MARKER, optedOut, projectRoot, read } from "./shared.mts";
 
 const MODE: string = "__KB_GATE_MODE__";
 const MAX_DENIALS_PER_STATE = 4;
@@ -132,13 +132,30 @@ function gate(): void {
   const isRetrieval = event === "PostToolUse" && RETRIEVAL_TOOLS.includes(payload.tool_name);
   const isMemoryWrite = event === "PreToolUse" && MEMORY_WRITE_TOOLS.includes(payload.tool_name);
   const target = payload.tool_input?.file_path || payload.tool_input?.notebook_path || "";
-  if (target && !mentionsMemories(target)) return;
   const command = String(payload.tool_input?.command ?? "");
+  // The marker also switches off the memory write gate, so an agent must not be able to set or clear it.
+  if (
+    event === "PreToolUse" &&
+    ((isMemoryWrite && basename(target) === OPT_OUT_MARKER) || (payload.tool_name === "Bash" && command.includes(OPT_OUT_MARKER)))
+  ) {
+    process.stdout.write(
+      `${JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: event,
+          permissionDecision: "deny",
+          permissionDecisionReason: `Only the user opts a project in or out of the memory loop. Ask them to create or remove .claude/${OPT_OUT_MARKER} themselves.`,
+        },
+      })}\n`,
+    );
+    return;
+  }
+  if (target && !mentionsMemories(target)) return;
   const isMemoryDelete =
     event === "PreToolUse" && payload.tool_name === "Bash" && command.includes("memories") && MEMORY_DELETE.test(command);
   if (event === "PreToolUse" && payload.tool_name === "Bash" && !isMemoryDelete) return;
 
   const root = projectRoot();
+  if (optedOut(root)) return;
   const memories = `${root}/.claude/memories`;
   const usage = `${memories}/.usage.tsv`;
   const state = `${root}/.claude/.kb-gate`;

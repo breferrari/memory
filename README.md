@@ -110,6 +110,10 @@ Writes to `.claude/memories/` are gated separately, and in every mode except `of
 
 To change the mode, run `mcs sync` again. The selection is baked into the installed hook rather than read from a runtime setting.
 
+## Opting a project out
+
+To exclude one project from a global install, create `.claude/.no-memory-loop` in its root yourself; the gate stops an agent from creating or removing it. The hooks then do nothing there. The MCP server is still registered, so deny it in that project's settings (`"permissions": { "deny": ["mcp__memory-loop"] }`).
+
 ## What's included
 
 | Component | What it does |

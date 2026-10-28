@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { accessSync, constants, readFileSync, statSync } from "node:fs";
+import { accessSync, constants, existsSync, readFileSync, statSync } from "node:fs";
 import { delimiter, join } from "node:path";
 
 export function attempt<T>(action: () => T): T | undefined {
@@ -32,4 +32,10 @@ export function commandExists(command: string): boolean {
 export function projectRoot(): string {
   const result = spawnSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
   return result.stdout?.replace(/\n+$/, "") || process.env.CLAUDE_PROJECT_DIR || process.env.PWD || process.cwd();
+}
+
+export const OPT_OUT_MARKER = ".no-memory-loop";
+
+export function optedOut(root: string): boolean {
+  return existsSync(`${root}/.claude/${OPT_OUT_MARKER}`);
 }

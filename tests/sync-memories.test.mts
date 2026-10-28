@@ -51,6 +51,13 @@ for (const linked of [false, true]) {
   });
 }
 
+test("an opted-out project is neither configured nor indexed", t => {
+  const f = indexer(t);
+  f.optOut();
+  assert.deepEqual(f.run(), []);
+  assert.equal(existsSync(f.directory), false);
+});
+
 test("config is registered before memories exist, repaired on drift, and stable otherwise", t => {
   const f = indexer(t);
   rmSync(`${f.project}/.claude/memories`, { recursive: true });
